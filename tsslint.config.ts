@@ -49,7 +49,7 @@ export default defineConfig({
 			}
 
 			ts.forEachChild(sourceFile, function cb(node: ts.Node): void {
-				const comments = ts.getLeadingCommentRanges(sourceFile.text, node.pos);
+				const comments = ts.getLeadingCommentRanges(sourceFile.text, node.pos) || [];
 				comments.forEach(comment => {
 					if (isValidTsIgnorePresent(comment)) {
 						reportError('Use "@ts-expect-error" to ensure an error is actually being suppressed.', comment.pos, comment.end);
