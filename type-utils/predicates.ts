@@ -1,0 +1,188 @@
+// import debug from 'debug';
+import * as tsutils from 'ts-api-utils';
+import type * as ts from 'typescript';
+
+import { isTypeFlagSet } from './typeFlagUtils';
+
+// const log = debug('typescript-eslint:eslint-plugin:utils:types');
+
+export interface IsNullableTypeOptions {
+  /**
+   * @deprecated - this flag no longer does anything and will be removed in the next major
+   */
+  isReceiver?: boolean;
+  /**
+   * @deprecated - this flag no longer does anything and will be removed in the next major
+   */
+  allowUndefined?: boolean;
+}
+
+/**
+ * Checks if the given type is (or accepts) nullable
+ */
+export function isNullableType(
+  type: ts.Type,
+  _deprecated?: IsNullableTypeOptions,
+): boolean {
+  return isTypeFlagSet(
+    type,
+    (1 satisfies ts.TypeFlags.Any) |
+      (2 satisfies ts.TypeFlags.Unknown) |
+      (65536 satisfies ts.TypeFlags.Null) |
+      (32768 satisfies ts.TypeFlags.Undefined),
+  );
+}
+
+/**
+ * Checks if the given type is either an array type,
+ * or a union made up solely of array types.
+ */
+export function isTypeArrayTypeOrUnionOfArrayTypes(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+): boolean {
+  for (const t of tsutils.unionTypeParts(type)) {
+    if (!checker.isArrayType(t)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * @returns true if the type is `never`
+ */
+export function isTypeNeverType(type: ts.Type): boolean {
+  return isTypeFlagSet(type, 131072 satisfies ts.TypeFlags.Never);
+}
+
+/**
+ * @returns true if the type is `unknown`
+ */
+export function isTypeUnknownType(type: ts.Type): boolean {
+  return isTypeFlagSet(type, 2 satisfies ts.TypeFlags.Unknown);
+}
+
+// https://github.com/microsoft/TypeScript/blob/42aa18bf442c4df147e30deaf27261a41cbdc617/src/compiler/types.ts#L5157
+const Nullable =
+  (32768 satisfies ts.TypeFlags.Undefined) |
+  (65536 satisfies ts.TypeFlags.Null);
+// https://github.com/microsoft/TypeScript/blob/42aa18bf442c4df147e30deaf27261a41cbdc617/src/compiler/types.ts#L5187
+const ObjectFlagsType =
+  (1 satisfies ts.TypeFlags.Any) |
+  Nullable |
+  (131072 satisfies ts.TypeFlags.Never) |
+  (524288 satisfies ts.TypeFlags.Object) |
+  (1048576 satisfies ts.TypeFlags.Union) |
+  (2097152 satisfies ts.TypeFlags.Intersection);
+export function isTypeReferenceType(type: ts.Type): type is ts.TypeReference {
+  if ((type.flags & ObjectFlagsType) === 0) {
+    return false;
+  }
+  const objectTypeFlags = (type as ts.ObjectType).objectFlags;
+  return (objectTypeFlags & (4 satisfies ts.ObjectFlags.Reference)) !== 0;
+}
+
+/**
+ * @returns true if the type is `any`
+ */
+export function isTypeAnyType(type: ts.Type): boolean {
+  if (isTypeFlagSet(type, 1 satisfies ts.TypeFlags.Any)) {
+    if (type.intrinsicName === 'error') {
+      log('Found an "error" any type');
+    }
+    return true;
+  }
+  return false;
+}
+
+/**
+ * @returns true if the type is `any[]`
+ */
+export function isTypeAnyArrayType(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+): boolean {
+  return (
+    checker.isArrayType(type) &&
+    isTypeAnyType(checker.getTypeArguments(type)[0])
+  );
+}
+
+/**
+ * @returns true if the type is `unknown[]`
+ */
+export function isTypeUnknownArrayType(
+  type: ts.Type,
+  checker: ts.TypeChecker,
+): boolean {
+  return (
+    checker.isArrayType(type) &&
+    isTypeUnknownType(checker.getTypeArguments(type)[0])
+  );
+}
+
+export enum AnyType {
+  Any,
+  AnyArray,
+  Safe,
+}
+/**
+ * @returns `AnyType.Any` if the type is `any`, `AnyType.AnyArray` if the type is `any[]` or `readonly any[]`,
+ *          otherwise it returns `AnyType.Safe`.
+ */
+export function isAnyOrAnyArrayTypeDiscriminated(
+  node: ts.Node,
+  checker: ts.TypeChecker,
+): AnyType {
+  const type = checker.getTypeAtLocation(node);
+  if (isTypeAnyType(type)) {
+    return AnyType.Any;
+  }
+  if (isTypeAnyArrayType(type, checker)) {
+    return AnyType.AnyArray;
+  }
+  return AnyType.Safe;
+}
+
+/**
+ * @returns Whether a type is an instance of the parent type, including for the parent's base types.
+ */
+export function typeIsOrHasBaseType(
+  type: ts.Type,
+  parentType: ts.Type,
+): boolean {
+  const parentSymbol = parentType.getSymbol();
+  if (!type.getSymbol() || !parentSymbol) {
+    return false;
+  }
+
+  const typeAndBaseTypes = [type];
+  const ancestorTypes = type.getBaseTypes();
+
+  if (ancestorTypes) {
+    typeAndBaseTypes.push(...ancestorTypes);
+  }
+
+  for (const baseType of typeAndBaseTypes) {
+    const baseSymbol = baseType.getSymbol();
+    if (baseSymbol && baseSymbol.name === parentSymbol.name) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function isTypeBigIntLiteralType(
+  type: ts.Type,
+): type is ts.BigIntLiteralType {
+  return isTypeFlagSet(type, 2048 satisfies ts.TypeFlags.BigIntLiteral);
+}
+
+export function isTypeTemplateLiteralType(
+  type: ts.Type,
+): type is ts.TemplateLiteralType {
+  return isTypeFlagSet(type, 134217728 satisfies ts.TypeFlags.TemplateLiteral);
+}

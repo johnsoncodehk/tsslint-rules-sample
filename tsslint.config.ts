@@ -3,7 +3,7 @@ import type * as ts from 'typescript';
 
 export default defineConfig({
 	rules: {
-		'no-duplicate-case'({ typescript: ts, sourceFile, reportError }) {
+		'no-duplicate-case'({ typescript: ts, sourceFile, reportWarning }) {
 			ts.forEachChild(sourceFile, function cb(node: ts.Node): void {
 				if (ts.isSwitchStatement(node)) {
 					const caseClauses = node.caseBlock.clauses.filter(ts.isCaseClause);
@@ -13,7 +13,7 @@ export default defineConfig({
 						const label = clause.expression.getText(sourceFile);
 
 						if (seenLabels.has(label)) {
-							reportError('Disallow duplicate case labels', clause.getStart(sourceFile), clause.getEnd());
+							reportWarning('Disallow duplicate case labels', clause.getStart(sourceFile), clause.getEnd());
 						} else {
 							seenLabels.add(label);
 						}
@@ -23,56 +23,16 @@ export default defineConfig({
 				ts.forEachChild(node, cb);
 			});
 		},
-		'@typescript-eslint/prefer-ts-expect-error'({ typescript: ts, sourceFile, reportError }) {
-			const tsIgnoreRegExpSingleLine = /^\/\/\s*\/?\s*@ts-ignore/;
-			const tsIgnoreRegExpMultiLine = /^\s*(?:\/|\*)*\s*@ts-ignore/;
-
-			function isLineComment(comment: ts.CommentRange): boolean {
-				return ts.SyntaxKind.SingleLineCommentTrivia === comment.kind;
-			}
-
-			function getLastCommentLine(comment: ts.CommentRange): string {
-				if (isLineComment(comment)) {
-					return sourceFile.text.slice(comment.pos, comment.end);
-				}
-
-				// For multiline comments - we look at only the last line.
-				const commentlines = sourceFile.text.slice(comment.pos, comment.end).split('\n');
-				return commentlines[commentlines.length - 1];
-			}
-
-			function isValidTsIgnorePresent(comment: ts.CommentRange): boolean {
-				const line = getLastCommentLine(comment);
-				return isLineComment(comment)
-					? tsIgnoreRegExpSingleLine.test(line)
-					: tsIgnoreRegExpMultiLine.test(line);
-			}
-
-			ts.forEachChild(sourceFile, function cb(node: ts.Node): void {
-				const comments = ts.getLeadingCommentRanges(sourceFile.text, node.pos) || [];
-				comments.forEach(comment => {
-					if (isValidTsIgnorePresent(comment)) {
-						reportError('Use "@ts-expect-error" to ensure an error is actually being suppressed.', comment.pos, comment.end);
-					}
-				});
-
-				ts.forEachChild(node, cb);
-			});
-		},
-		'no-unreachable-code'({ typescript: ts, sourceFile, reportError }) {
-			// TODO
-		},
-		'@typescript-eslint/no-unnecessary-type-assertion': convertTSLintRule((await import('tslint/lib/rules/noUnnecessaryTypeAssertionRule.js')).Rule),
-		'@typescript-eslint/prefer-nullish-coalescing'({ typescript: ts, sourceFile, reportError }) {
-			// TODO
-		},
+		'@typescript-eslint/prefer-ts-expect-error': (await (import('./rules/prefer-ts-expect-error.ts'))).create(),
+		// 'no-unreachable-code'({ typescript: ts, sourceFile, reportError }) {
+		// 	// TODO
+		// },
+		// '@typescript-eslint/no-unnecessary-type-assertion': convertTSLintRule((await import('tslint/lib/rules/noUnnecessaryTypeAssertionRule.js')).Rule),
+		'@typescript-eslint/no-unnecessary-type-assertion': (await import('./rules/no-unnecessary-type-assertion.ts')).create(),
+		'@typescript-eslint/prefer-nullish-coalescing': (await import('./rules/prefer-nullish-coalescing.ts')).create(),
 		'@typescript-eslint/strict-boolean-expressions': convertTSLintRule((await import('tslint/lib/rules/strictBooleanExpressionsRule.js')).Rule),
-		'@typescript-eslint/switch-exhaustiveness-check'({ typescript: ts, sourceFile, reportError }) {
-			// TODO
-		},
-		'@typescript-eslint/no-unnecessary-condition'({ typescript: ts, sourceFile, reportError }) {
-			// TODO
-		},
+		'@typescript-eslint/switch-exhaustiveness-check': (await import('./rules/switch-exhaustiveness-check.ts')).create(),
+		'@typescript-eslint/no-unnecessary-condition': (await import('./rules/no-unnecessary-condition.ts')).create(),
 	},
 });
 
