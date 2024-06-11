@@ -29,10 +29,19 @@ export default defineConfig({
 		// },
 		// '@typescript-eslint/no-unnecessary-type-assertion': convertTSLintRule((await import('tslint/lib/rules/noUnnecessaryTypeAssertionRule.js')).Rule),
 		'@typescript-eslint/no-unnecessary-type-assertion': (await import('./rules/no-unnecessary-type-assertion.ts')).create(),
-		'@typescript-eslint/prefer-nullish-coalescing': (await import('./rules/prefer-nullish-coalescing.ts')).create(),
+		'@typescript-eslint/prefer-nullish-coalescing': (await import('./rules/prefer-nullish-coalescing.ts')).create({
+			ignorePrimitives: {
+				boolean: true,
+			},
+		}),
 		'@typescript-eslint/strict-boolean-expressions': convertTSLintRule((await import('tslint/lib/rules/strictBooleanExpressionsRule.js')).Rule),
-		'@typescript-eslint/switch-exhaustiveness-check': (await import('./rules/switch-exhaustiveness-check.ts')).create(),
-		'@typescript-eslint/no-unnecessary-condition': (await import('./rules/no-unnecessary-condition.ts')).create(),
+		'@typescript-eslint/switch-exhaustiveness-check': (await import('./rules/switch-exhaustiveness-check.ts')).create({
+			allowDefaultCaseForExhaustiveSwitch: true,
+			requireDefaultForNonUnion: true,
+		}),
+		'@typescript-eslint/no-unnecessary-condition': (await import('./rules/no-unnecessary-condition.ts')).create({
+			allowConstantLoopConditions: true,
+		}),
 	},
 });
 
