@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @ts-ignore
 const str: string = 1;
 

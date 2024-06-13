@@ -1,3 +1,4 @@
+// @ts-nocheck
 // nullable numbers are considered unsafe by default
 let num: number | undefined = 0;
 if (num) {

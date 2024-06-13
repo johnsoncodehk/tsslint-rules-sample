@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*eslint no-unreachable: "error"*/
 
 function foo() {

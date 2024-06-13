@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*eslint no-duplicate-case: "error"*/
 
 var a = 1,

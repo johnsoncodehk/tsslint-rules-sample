@@ -1,3 +1,4 @@
+// @ts-nocheck
 const foo: any = 'bar';
 foo !== undefined && foo !== null ? foo : 'a string';
 foo === undefined || foo === null ? 'a string' : foo;

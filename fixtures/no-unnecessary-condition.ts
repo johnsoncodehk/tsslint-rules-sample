@@ -1,3 +1,4 @@
+// @ts-nocheck
 function head<T>(items: T[]) {
     // items can never be nullable, so this is unnecessary
     if (items) {
