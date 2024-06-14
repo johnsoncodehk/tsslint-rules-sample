@@ -1,12 +1,10 @@
 {
     "devDependencies": {
-        "@tsslint/cli": "1.0.3",
-        "@tsslint/config": "1.0.3",
-        "@tsslint/eslint": "1.0.3",
+        "@tsslint/cli": "latest",
+        "@tsslint/config": "latest",
+        "@tsslint/eslint": "latest",
         "@types/node": "latest",
         "@typescript-eslint/eslint-plugin": "^7.13.0",
-        "@typescript-eslint/typescript-estree": "^7.13.0",
-        "eslint": "^9.4.0",
         "typescript": "latest"
     },
     "scripts": {
